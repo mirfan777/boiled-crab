@@ -1,0 +1,57 @@
+# Build & Dependencies
+/target
+/migration/target
+Cargo.lock
+**/*.rs.bk
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.sublime-*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS & Temp files
+Thumbs.db
+.DS_Store
+.AppleDouble
+*.tmp
+.tmp/
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+*.rlib
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Test coverage
+.coverage
+coverage/
+*.profraw
+*.profdata
+
+# IDE cache
+.cache/
+.idea/
+*.iml
