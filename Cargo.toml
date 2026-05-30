@@ -1,18 +1,17 @@
 [package]
 name = "boiled_crab"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
 # Web framework
 axum = "0.8.9"
 tokio = { version = "1.40", features = ["full"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+tower = "0.5.3"
+tower-http = { version = "0.6.11", features = ["cors", "trace"] }
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "mysql"] }
-sea-orm = { version = "1.0", features = ["runtime-tokio-native-tls", "sqlx-mysql", "macros", "debug-print"] }
+sea-orm = { version = "1.1.20", features = ["runtime-tokio-native-tls", "sqlx-mysql", "macros", "debug-print", "chrono"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -27,14 +26,14 @@ chrono = { version = "0.4", features = ["serde"] }
 regex = "1.10"
 
 # Validation
-validator = { version = "0.18", features = ["derive"] }
+validator = { version = "0.20.0", features = ["derive"] }
 
 # Hashing & Security
-bcrypt = "0.15"
-jsonwebtoken = "9.3"
+bcrypt = "0.19.1"
+jsonwebtoken = "10.4.0"
 
 # Error handling
-thiserror = "1.0"
+thiserror = "2.0.18"
 anyhow = "1.0"
 
 # Async utilities
@@ -43,5 +42,5 @@ async-trait = "0.1"
 
 [dev-dependencies]
 tokio-test = "0.4"
-mockall = "0.12"
+mockall = "0.14.0"
 async-trait = "0.1"

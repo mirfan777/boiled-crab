@@ -7,14 +7,14 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use sqlx::mysql::MySqlPoolOptions;
+use sea_orm::Database;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 
 use application::services::AuthService;
 use infrastructure::config::Config;
-use infrastructure::database::MySqlUserRepository;
+use infrastructure::database::SeaOrmUserRepository;
 use presentation::handlers::AppState;
 
 #[tokio::main]
@@ -26,17 +26,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::from_env();
     info!("Configuration loaded");
 
-    // Initialize database connection pool
+    // Initialize database connection
     let database_url = config.database_url();
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await?;
+    let db = Database::connect(&database_url).await?;
 
     info!("Database connected successfully");
 
     // Create repository
-    let user_repository = Arc::new(MySqlUserRepository::new(pool));
+    let user_repository = Arc::new(SeaOrmUserRepository::new(db));
 
     // Create services
     let auth_service = Arc::new(AuthService::new(

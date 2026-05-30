@@ -45,10 +45,10 @@ impl IntoResponse for DomainError {
     }
 }
 
-impl From<sqlx::Error> for DomainError {
-    fn from(err: sqlx::Error) -> Self {
+impl From<sea_orm::DbErr> for DomainError {
+    fn from(err: sea_orm::DbErr) -> Self {
         match err {
-            sqlx::Error::RowNotFound => DomainError::NotFound("Resource not found".to_string()),
+            sea_orm::DbErr::RecordNotFound(_) => DomainError::NotFound("Resource not found".to_string()),
             _ => {
                 tracing::error!("Database error: {:?}", err);
                 DomainError::InternalError("Database error".to_string())

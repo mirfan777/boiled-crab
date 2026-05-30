@@ -6,7 +6,7 @@ use axum::{
 use serde_json::json;
 use uuid::Uuid;
 
-use super::app_state::AppState;
+use super::AppState;
 
 pub async fn get_user(
     State(state): State<AppState>,

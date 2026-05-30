@@ -7,8 +7,8 @@ use axum::{
 use serde_json::json;
 use validator::Validate;
 
-use crate::application::dtos::LoginUserRequest;
-use super::app_state::AppState;
+use crate::application::dtos::{LoginUserRequest, RegisterUserRequest};
+use super::AppState;
 
 pub async fn login(
     State(state): State<AppState>,
@@ -25,6 +25,26 @@ pub async fn login(
         }
         Err(err) => {
             tracing::error!("Login error: {}", err);
+            err.into_response()
+        }
+    }
+}
+
+pub async fn register(
+    State(state): State<AppState>,
+    Json(req): Json<RegisterUserRequest>,
+) -> Response {
+    if let Err(_) = req.validate() {
+        return (StatusCode::BAD_REQUEST, Json(json!({"error": "Validation failed"}))).into_response();
+    }
+
+    match state.auth_service.register(req).await {
+        Ok(user) => {
+            tracing::info!("User registered successfully: {}", user.email);
+            (StatusCode::CREATED, Json(json!({"data": user}))).into_response()
+        }
+        Err(err) => {
+            tracing::error!("Register error: {}", err);
             err.into_response()
         }
     }
