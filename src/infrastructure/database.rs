@@ -1,4 +1,5 @@
-pub mod user_model;
-mod user_repository_impl;
+pub mod model;
+pub mod repository;
 
-pub use user_repository_impl::SeaOrmUserRepository;
+pub use repository::SeaOrmUserRepository;
+pub use model::{UserModel};

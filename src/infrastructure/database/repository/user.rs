@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::domain::entities::User;
 use crate::domain::repositories::UserRepository;
 use crate::domain::DomainError;
-use super::user_model;
+use crate::infrastructure::database::model::user as user_model;
 
 pub struct SeaOrmUserRepository {
     db: DatabaseConnection,
