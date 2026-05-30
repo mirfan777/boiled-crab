@@ -3,6 +3,8 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct RegisterUserRequest {
+    #[validate(length(min = 1))]
+    pub name: String,
     #[validate(email)]
     pub email: String,
     #[validate(length(min = 8))]

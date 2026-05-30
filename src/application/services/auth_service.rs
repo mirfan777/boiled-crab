@@ -38,11 +38,12 @@ impl AuthService {
             .map_err(|_| DomainError::InternalError("Failed to hash password".to_string()))?;
 
         // Create user
-        let user = User::new(Uuid::new_v4(), req.email, password_hash);
+        let user = User::new(Uuid::new_v4(), req.name, req.email, password_hash);
         let created_user = self.user_repository.create(&user).await?;
 
         Ok(UserResponse {
             id: created_user.id,
+            name: created_user.name,
             email: created_user.email,
             created_at: created_user.created_at.to_rfc3339(),
             updated_at: created_user.updated_at.to_rfc3339(),
@@ -72,6 +73,7 @@ impl AuthService {
             token,
             user: UserResponse {
                 id: user.id,
+                name: user.name,
                 email: user.email,
                 created_at: user.created_at.to_rfc3339(),
                 updated_at: user.updated_at.to_rfc3339(),
@@ -116,6 +118,7 @@ impl AuthService {
 
         Ok(UserResponse {
             id: user.id,
+            name: user.name,
             email: user.email,
             created_at: user.created_at.to_rfc3339(),
             updated_at: user.updated_at.to_rfc3339(),
@@ -164,6 +167,7 @@ mod tests {
         );
 
         let req = RegisterUserRequest {
+            name: "Test User".to_string(),
             email: "test@example.com".to_string(),
             password: "password123".to_string(),
         };
@@ -178,6 +182,7 @@ mod tests {
         
         let existing_user = User::new(
             Uuid::new_v4(),
+            "Test User".to_string(),
             "test@example.com".to_string(),
             "hash".to_string(),
         );
@@ -194,6 +199,7 @@ mod tests {
         );
 
         let req = RegisterUserRequest {
+            name: "Test User".to_string(),
             email: "test@example.com".to_string(),
             password: "password123".to_string(),
         };
@@ -212,6 +218,7 @@ mod tests {
         
         let user = User::new(
             user_id,
+            "Test User".to_string(),
             "test@example.com".to_string(),
             password_hash,
         );

@@ -5,6 +5,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct User {
     pub id: Uuid,
+    pub name: String,
     pub email: String,
     pub password_hash: String,
     pub created_at: DateTime<Utc>,
@@ -12,10 +13,11 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(id: Uuid, email: String, password_hash: String) -> Self {
+    pub fn new(id: Uuid, name: String, email: String, password_hash: String) -> Self {
         let now = Utc::now();
         Self {
             id,
+            name,
             email,
             password_hash,
             created_at: now,

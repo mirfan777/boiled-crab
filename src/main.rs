@@ -3,19 +3,15 @@ mod application;
 mod infrastructure;
 mod presentation;
 
-use axum::{
-    routing::{get, post},
-    Router,
-};
 use sea_orm::Database;
 use std::sync::Arc;
-use tower_http::cors::CorsLayer;
 use tracing::info;
 
 use application::services::AuthService;
 use infrastructure::config::Config;
 use infrastructure::database::SeaOrmUserRepository;
 use presentation::handlers::AppState;
+use presentation::routes::create_routes;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,13 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState { auth_service };
 
     // Build router
-    let app = Router::new()
-        .route("/health", get(presentation::handlers::health))
-        .route("/api/auth/register", post(presentation::handlers::register))
-        .route("/api/auth/login", post(presentation::handlers::login))
-        .route("/api/users/{user_id}", get(presentation::handlers::get_user))
-        .layer(CorsLayer::permissive())
-        .with_state(state);
+    let app = create_routes(state);
 
     // Create listener
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", config.app_host, config.app_port))

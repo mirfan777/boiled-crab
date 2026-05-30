@@ -12,6 +12,7 @@ impl MigrationTrait for Migration {
                     .table(Users::Table)
                     .if_not_exists()
                     .col(string(Users::Id).primary_key())
+                    .col(string(Users::Name))
                     .col(string(Users::Email).unique_key())
                     .col(string(Users::PasswordHash))
                     .col(timestamp(Users::CreatedAt).default(Expr::current_timestamp()))
@@ -32,6 +33,7 @@ impl MigrationTrait for Migration {
 enum Users {
     Table,
     Id,
+    Name,
     Email,
     PasswordHash,
     CreatedAt,

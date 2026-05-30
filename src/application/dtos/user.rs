@@ -4,6 +4,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserResponse {
     pub id: Uuid,
+    pub name: String,
     pub email: String,
     pub created_at: String,
     pub updated_at: String,

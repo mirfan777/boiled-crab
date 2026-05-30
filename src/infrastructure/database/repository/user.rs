@@ -23,6 +23,7 @@ impl UserRepository for SeaOrmUserRepository {
     async fn create(&self, user: &User) -> Result<User, DomainError> {
         let model = user_model::ActiveModel {
             id: sea_orm::Set(user.id.to_string()),
+            name: sea_orm::Set(user.name.clone()),
             email: sea_orm::Set(user.email.clone()),
             password_hash: sea_orm::Set(user.password_hash.clone()),
             created_at: sea_orm::Set(user.created_at),
@@ -51,6 +52,7 @@ impl UserRepository for SeaOrmUserRepository {
 
         Ok(user.map(|model| User {
             id: Uuid::parse_str(&model.id).unwrap(),
+            name: model.name,
             email: model.email,
             password_hash: model.password_hash,
             created_at: model.created_at,
@@ -66,6 +68,7 @@ impl UserRepository for SeaOrmUserRepository {
 
         Ok(user.map(|model| User {
             id: Uuid::parse_str(&model.id).unwrap(),
+            name: model.name,
             email: model.email,
             password_hash: model.password_hash,
             created_at: model.created_at,
@@ -76,6 +79,7 @@ impl UserRepository for SeaOrmUserRepository {
     async fn update(&self, user: &User) -> Result<User, DomainError> {
         let model: user_model::ActiveModel = user_model::Model {
             id: user.id.to_string(),
+            name: user.name.clone(),
             email: user.email.clone(),
             password_hash: user.password_hash.clone(),
             created_at: user.created_at,
@@ -106,6 +110,7 @@ impl UserRepository for SeaOrmUserRepository {
             .into_iter()
             .map(|model| User {
                 id: Uuid::parse_str(&model.id).unwrap(),
+                name: model.name,
                 email: model.email,
                 password_hash: model.password_hash,
                 created_at: model.created_at,
