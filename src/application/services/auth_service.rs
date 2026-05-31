@@ -4,26 +4,29 @@ use crate::domain::repositories::UserRepository;
 use crate::domain::DomainError;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
-use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey};
+use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey, Algorithm};
 use uuid::Uuid;
 use std::sync::Arc;
 
 pub struct AuthService {
-    user_repository: Arc<dyn UserRepository>,
+    user_repository: Arc<dyn UserRepository + Send + Sync>,
     jwt_secret: String,
     jwt_expiration: u64,
+    jwt_algorithm: Algorithm,
 }
 
 impl AuthService {
     pub fn new(
-        user_repository: Arc<dyn UserRepository>,
+        user_repository: Arc<dyn UserRepository + Send + Sync>,
         jwt_secret: String,
         jwt_expiration: u64,
+        jwt_algorithm: Algorithm,
     ) -> Self {
         Self {
             user_repository,
             jwt_secret,
             jwt_expiration,
+            jwt_algorithm,
         }
     }
 
@@ -90,23 +93,18 @@ impl AuthService {
             exp,
             iat: now.timestamp() as u64,
         };
+        let header = Header::new(self.jwt_algorithm);
 
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(self.jwt_secret.as_ref()),
-        )
-        .map_err(|_| DomainError::InternalError("Failed to generate token".to_string()))
+        encode(&header, &claims, &EncodingKey::from_secret(self.jwt_secret.as_ref()))
+            .map_err(|_| DomainError::InternalError("Failed to generate token".to_string()))
     }
 
     pub fn verify_token(&self, token: &str) -> Result<AuthTokenClaims, DomainError> {
-        decode(
-            token,
-            &DecodingKey::from_secret(self.jwt_secret.as_ref()),
-            &Validation::default(),
-        )
-        .map(|data| data.claims)
-        .map_err(|_| DomainError::UnauthorizedError("Invalid token".to_string()))
+        let validation = Validation::new(self.jwt_algorithm);
+
+        decode(token, &DecodingKey::from_secret(self.jwt_secret.as_ref()), &validation)
+            .map(|data| data.claims)
+            .map_err(|_| DomainError::UnauthorizedError("Invalid token".to_string()))
     }
 
     pub async fn get_user(&self, user_id: Uuid) -> Result<UserResponse, DomainError> {
@@ -163,7 +161,9 @@ mod tests {
         let auth_service = AuthService::new(
             Arc::new(mock_repo),
             "secret".to_string(),
+            
             3600,
+            jsonwebtoken::Algorithm::HS256,
         );
 
         let req = RegisterUserRequest {
@@ -196,6 +196,7 @@ mod tests {
             Arc::new(mock_repo),
             "secret".to_string(),
             3600,
+            jsonwebtoken::Algorithm::HS256,
         );
 
         let req = RegisterUserRequest {
@@ -232,6 +233,7 @@ mod tests {
             Arc::new(mock_repo),
             "secret".to_string(),
             3600,
+            jsonwebtoken::Algorithm::HS256,
         );
 
         let req = LoginUserRequest {

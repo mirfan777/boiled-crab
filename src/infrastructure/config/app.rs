@@ -1,6 +1,8 @@
 use dotenv::dotenv;
 use std::env;
 
+use crate::infrastructure::config::AuthConfig;
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub db_connection: String,
@@ -12,8 +14,7 @@ pub struct Config {
     pub app_host: String,
     pub app_port: u16,
     pub app_env: String,
-    pub jwt_secret: String,
-    pub jwt_expiration: u64,
+    pub auth: AuthConfig,
 }
 
 impl Config {
@@ -36,11 +37,7 @@ impl Config {
                 .parse()
                 .unwrap_or(3000),
             app_env: env::var("APP_ENV").unwrap_or_else(|_| "development".to_string()),
-            jwt_secret: env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string()),
-            jwt_expiration: env::var("JWT_EXPIRATION")
-                .unwrap_or_else(|_| "86400".to_string())
-                .parse()
-                .unwrap_or(86400),
+            auth: AuthConfig::from_env(),
         }
     }
 

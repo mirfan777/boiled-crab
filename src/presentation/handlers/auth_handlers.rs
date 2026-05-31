@@ -1,6 +1,6 @@
 use axum::{
-    extract::State,
-    http::{StatusCode, HeaderMap},
+    extract::{Extension, State},
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
@@ -8,7 +8,7 @@ use serde_json::json;
 use validator::Validate;
 use uuid::Uuid;
 
-use crate::application::dtos::{LoginUserRequest, RegisterUserRequest};
+use crate::application::dtos::{AuthTokenClaims, LoginUserRequest, RegisterUserRequest};
 use super::AppState;
 
 pub async fn login(
@@ -53,38 +53,27 @@ pub async fn register(
 
 pub async fn profile(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    Extension(claims): Extension<AuthTokenClaims>,
 ) -> Response {
-    // Extract Bearer token from Authorization header
-    let auth_header = headers
-        .get("authorization")
-        .and_then(|h| h.to_str().ok())
-        .and_then(|s| s.strip_prefix("Bearer "));
-
-    if let Some(token) = auth_header {
-        match state.auth_service.verify_token(token) {
-            Ok(claims) => {
-                if let Ok(user_id) = Uuid::parse_str(&claims.sub) {
-                    match state.auth_service.get_user(user_id).await {
-                        Ok(user) => {
-                            tracing::info!("Profile fetched for user: {}", user.email);
-                            (StatusCode::OK, Json(json!({"data": user}))).into_response()
-                        }
-                        Err(err) => {
-                            tracing::error!("Profile error: {}", err);
-                            err.into_response()
-                        }
-                    }
-                } else {
-                    (StatusCode::UNAUTHORIZED, Json(json!({"error": "Invalid user ID"}))).into_response()
-                }
-            }
-            Err(err) => {
-                tracing::error!("Token verification error: {}", err);
-                err.into_response()
-            }
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(user_id) => user_id,
+        Err(_) => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error": "Invalid token subject"})),
+            )
+                .into_response();
         }
-    } else {
-        (StatusCode::UNAUTHORIZED, Json(json!({"error": "Missing or invalid authorization header"}))).into_response()
+    };
+
+    match state.auth_service.get_user(user_id).await {
+        Ok(user) => {
+            tracing::info!("Profile fetched for user: {}", user.email);
+            (StatusCode::OK, Json(json!({"data": user}))).into_response()
+        }
+        Err(err) => {
+            tracing::error!("Profile error: {}", err);
+            err.into_response()
+        }
     }
 }
