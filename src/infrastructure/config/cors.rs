@@ -1,5 +1,3 @@
-use std::env;
-
 use axum::http::{header, HeaderValue, Method, Uri};
 use tower_http::cors::CorsLayer;
 
@@ -15,23 +13,23 @@ pub fn build_cors_layer(app_env: &str) -> Result<CorsLayer, String> {
 }
 
 fn build_production_cors_layer() -> Result<CorsLayer, String> {
-	let raw_origins = env::var("APP_ALLOWED_WEB").map_err(|_| {
-		"Production mode requires APP_ALLOWED_WEB (comma-separated), for example: https://app.example.com,https://admin.example.com".to_string()
-	})?;
+	let allowed_origins = [
+		"https://app.example.com",
+		"https://admin.example.com",
+	];
 
-	let origins: Vec<HeaderValue> = raw_origins
-		.split(',')
-		.map(str::trim)
-		.filter(|origin| !origin.is_empty())
+	let origins: Vec<HeaderValue> = allowed_origins
+		.iter()
+		.copied()
 		.map(|origin| {
 			validate_origin(origin)?;
 			HeaderValue::from_str(origin)
-				.map_err(|_| format!("Invalid origin in APP_ALLOWED_WEB: {}", origin))
+				.map_err(|_| format!("Invalid hardcoded origin value: {}", origin))
 		})
 		.collect::<Result<Vec<_>, _>>()?;
 
 	if origins.is_empty() {
-		return Err("APP_ALLOWED_WEB cannot be empty in production mode".to_string());
+		return Err("Hardcoded allowed origins list cannot be empty in production mode".to_string());
 	}
 
 	Ok(CorsLayer::new()

@@ -1,264 +1,147 @@
-# 🦀 Boiled Crab - Clean Architecture Axum API
+# Boiled Crab — Clean Architecture Axum API
 
-A production-ready REST API demonstrating **clean architecture** and **onion architecture** patterns with Axum, SQLx, SeaORM, and MySQL.
+Professional README with clear setup, migration, build, and deployment instructions.
 
-[![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-[![Axum](https://img.shields.io/badge/Axum-0.8.9-blue.svg)](https://github.com/tokio-rs/axum)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+## Summary
 
-## ✨ Features
+Boiled Crab is a minimal REST API scaffold demonstrating Clean/Onion Architecture using Axum, SeaORM, and JWT-based authentication. This repository is focused on a secure, testable structure suitable as a starting point for production services.
 
-- 🏗️ **Clean Architecture** - Layered architecture following SOLID principles
-- 🧅 **Onion Architecture** - Dependencies point inward to domain layer
-- 🔐 **JWT Authentication** - Secure token-based auth with bcrypt hashing
-- 🗄️ **MySQL Database** - SQLx for type-safe queries, SeaORM for ORM
-- ✅ **Input Validation** - Request validation with validator crate
-- 🧪 **Unit Tests** - Comprehensive tests with mocks (mockall)
-- 🌐 **REST API** - Axum web framework with CORS support
-- 📝 **Migrations** - Database schema versioning
-- ⚙️ **Configuration** - Environment-based config with .env
-- 📚 **Documentation** - Complete API and architecture docs
+Supported features
+- Clean architecture layering (presentation → application → infrastructure → domain)
+- JWT authentication with configurable algorithm and expiration
+- SeaORM-based repository adapter (MySQL)
+- Input validation using `validator`
+- CORS and basic rate-limiting middleware
 
-## 🏛️ Architecture
+## Prerequisites
 
-```
-User Request
-    ↓
-┌─────────────────────────────────────┐
-│  Presentation Layer (Handlers)      │
-│  /api/auth/register, /api/auth/login│
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Application Layer (Services)       │
-│  AuthService, Validation, DTOs      │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Infrastructure Layer               │
-│  MySqlUserRepository, Config        │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Domain Layer (Business Logic)      │
-│  User Entity, Repository Interface  │
-└─────────────────────────────────────┘
-```
+Install required tools:
 
-## 🚀 Quick Start
-
-### Prerequisites
 ```bash
-rustc 1.70+
-cargo latest
+rustup update stable
+cargo --version
 mysql 8.0+
+docker (optional, for containerized deployments)
 ```
 
-### 1. Clone & Setup
+## Configuration
+
+Copy the example env and edit values for your environment:
+
 ```bash
-cd boiled-crab
 cp .env.example .env
+# Edit .env with production values (DB, JWT_SECRET, JWT_ALGORITHM, APP_HOST, APP_PORT)
 ```
 
-### 2. Configure Database
-Edit `.env`:
-```env
-DB_HOST=127.0.0.1
-DB_USERNAME=root
-DB_PASSWORD=your_password
-```
+Important production variables:
+- `APP_ENV=production`
+- `DATABASE_URL` or `DB_*` variables
+- `JWT_SECRET` (must be set and sufficiently long)
+- `JWT_ALGORITHM` (e.g. `HS256`, `RS256`)
+- `APP_ALLOWED_WEB` (CORS allowlist) — ensure valid origins
 
-### 3. Create Database
+## Migrations
+
+This project includes SQL migrations under `migration/`.
+
+Manual (MySQL):
+
 ```bash
-mysql -u root -p -e "CREATE DATABASE boiled_crab CHARACTER SET utf8mb4;"
+# create database
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS boiled_crab CHARACTER SET utf8mb4;"
+
+# apply migration (example)
+mysql -u root -p boiled_crab < migration/sql/001_create_users_table.sql
 ```
 
-### 4. Run Migrations
-```bash
-mysql -u root -p boiled_crab < migrations/001_create_users_table.sql
-```
+If you adopt a migration tool (SeaORM migrator, sqlx-cli, or Flyway), prefer using a single `DATABASE_URL` env var and run migrations in CI/CD before deployment.
 
-### 5. Run Server
+## Run (Development)
+
 ```bash
 cargo run
-# Server: http://localhost:3000
+# Server defaults to http://127.0.0.1:3000
 ```
 
-## 📡 API Examples
-
-### Register
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123"
-  }'
-```
-
-### Login
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123"
-  }'
-```
-
-### Get User
-```bash
-curl http://localhost:3000/api/users/{user_id}
-```
-
-## 📂 Project Structure
-
-```
-boiled-crab/
-├── src/
-│   ├── domain/              # 🎯 Business logic (entities, repositories)
-│   ├── application/         # 📋 Services & DTOs
-│   ├── infrastructure/      # 🔧 Database & config
-│   ├── presentation/        # 🌐 HTTP handlers & routes
-│   └── main.rs              # Entry point
-├── migrations/              # 📊 Database migrations
-├── tests/                   # 🧪 Integration tests
-├── .env                     # Environment config
-├── Cargo.toml               # Dependencies
-├── QUICKSTART.md            # 5-minute setup guide
-├── ARCHITECTURE.md          # Detailed architecture
-├── API.md                   # API documentation
-└── CONTRIBUTING.md          # Contributing guidelines
-```
-
-## 🧪 Testing
+Run with a specific environment file:
 
 ```bash
-# Run all tests
+APP_ENV=development cargo run
+```
+
+## Build (Production)
+
+```bash
+cargo build --release
+# Run the optimized binary
+./target/release/boiled_crab
+```
+
+## Docker (recommended for production)
+
+Create a `Dockerfile` (example):
+
+```dockerfile
+FROM rust:1.70 as builder
+WORKDIR /usr/src/app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+COPY --from=builder /usr/src/app/target/release/boiled_crab /usr/local/bin/boiled_crab
+ENV RUST_LOG=info
+EXPOSE 3000
+CMD ["/usr/local/bin/boiled_crab"]
+```
+
+Build and run:
+
+```bash
+docker build -t boiled_crab:latest .
+docker run --env-file .env -p 3000:3000 boiled_crab:latest
+```
+
+## Deployment Notes
+
+- Use a process supervisor (systemd) or orchestrator (Kubernetes) to run the binary.
+- Prefer TLS termination at the edge (load balancer / reverse proxy) or provide certs and enable TLS in the service.
+- Inject secrets with a secret manager (Vault, AWS Secrets Manager, Kubernetes Secrets) — do not store production secrets in `.env`.
+- Run database migrations as a separate CI/CD step before rolling updates.
+- Use rolling updates and health checks to avoid downtime.
+
+## Healthchecks & Monitoring
+
+- Provide `/health` endpoint (already present) for liveness and readiness probes.
+- Export metrics (Prometheus) and traces (OpenTelemetry) in production for observability.
+
+## Testing
+
+Run unit and integration tests locally:
+
+```bash
 cargo test
-
-# Run with output
-cargo test -- --nocapture
-
-# Run specific test
-cargo test test_register_user_success
 ```
 
-## 📚 Documentation
+For integration tests that need a DB, use a dedicated test database or a test container (Docker Compose).
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Get running in 5 minutes
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Deep dive into design patterns
-- **[API.md](API.md)** - Complete API reference
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute
+## Security Checklist (Before Production)
 
-## 🔐 Security
+- Ensure `JWT_SECRET` and `JWT_ALGORITHM` are configured and validated at startup.
+- Use native DB UUID types and validate persisted IDs.
+- Replace any remaining `unwrap()` calls.
+- Harden CORS and validate `APP_ALLOWED_WEB`.
+- Use rate limiting and account lockouts for authentication endpoints.
+- Enable structured logging and avoid exposing internal errors to clients.
 
-- JWT tokens with configurable expiration
-- Bcrypt password hashing (cost: 12)
-- Input validation on all endpoints
-- Never commits secrets to version control
-- CORS configuration for production
+## Contributing
 
-**Change JWT_SECRET in production!**
+Please follow the contribution guide: create branches, add tests, run `cargo fmt` and `cargo clippy`, and open a PR.
 
-## 📦 Dependencies
+## License
 
-### Core
-- **axum** (0.8.9) - Web framework
-- **tokio** - Async runtime
-- **sqlx** - Type-safe SQL
-- **sea-orm** - ORM library
-- **serde** - Serialization
-
-### Security
-- **bcrypt** - Password hashing
-- **jsonwebtoken** - JWT handling
-- **validator** - Input validation
-
-### Dev
-- **mockall** - Mocking for tests
-- **tokio-test** - Testing utilities
-
-## 🏗️ Extending the Project
-
-### Add a New Endpoint
-1. Create domain entity/repository
-2. Implement application service
-3. Add infrastructure repository
-4. Create presentation handler
-5. Add route to main.rs
-6. Write tests
-
-## 📊 Database Schema
-
-```sql
-CREATE TABLE users (
-    id VARCHAR(36) PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-## 🛠️ Development Commands
-
-```bash
-cargo build              # Debug build
-cargo build --release   # Optimized build
-cargo run               # Run development server
-cargo test              # Run tests
-cargo fmt               # Format code
-cargo clippy            # Lint checks
-```
-
-## 🐛 Troubleshooting
-
-### Database Connection Failed
-- Ensure MySQL is running
-- Check credentials in `.env`
-- Verify database exists
-
-### Port Already in Use
-- Change `APP_PORT` in `.env`
-- Kill process: `lsof -ti:3000 | xargs kill -9`
-
-### Compilation Errors
-- Update Rust: `rustup update`
-- Clean cache: `cargo clean && cargo build`
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests
-4. Format & lint (`cargo fmt && cargo clippy`)
-5. Commit with clear messages
-6. Push and open PR
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file
-
-## 🔗 Resources
-
-- [Axum Documentation](https://docs.rs/axum/)
-- [Tokio Tutorial](https://tokio.rs/tokio/tutorial)
-- [SQLx Documentation](https://docs.rs/sqlx/)
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [DDD Basics](https://martinfowler.com/bliki/DomainDrivenDesign.html)
-
-## 🎯 Next Steps
-
-1. ✅ Setup & run server
-2. ✅ Test API endpoints
-3. 📖 Read architecture docs
-4. 🔧 Add new features
-5. 🚀 Deploy to production
+MIT. See the `LICENSE` file for details.
 
 ---
 
-**Happy coding!** 🦀🚀
+If you'd like, I can also add a `Dockerfile`, a `Makefile` for common tasks, and a CI workflow for build/tests/migrations. Which should I add next?
 

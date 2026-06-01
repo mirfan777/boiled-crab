@@ -1,10 +1,4 @@
-// main.rs
-mod domain;
-mod application;
-mod infrastructure;
-mod presentation;
-
-use infrastructure::kernel::Kernel; 
+use boiled_crab::infrastructure::kernel::Kernel;
 use tracing::error;
 
 #[tokio::main]
